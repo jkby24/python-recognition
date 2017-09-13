@@ -188,12 +188,15 @@ if __name__ == "__main__":
     ORIGINAL_FOLDER = getAbspath(ORIGINAL_FOLDER)
     ServerClass  = BaseHTTPServer.HTTPServer
     Protocol     = "HTTP/1.0"
-    
     if sys.argv[1:]:
-        port = int(sys.argv[1])
+        addr = int(sys.argv[1])
+    else:
+        addr = ""
+    if sys.argv[2:]:
+        port = int(sys.argv[2])
     else:
         port = 8000
-    server_address = ('127.0.0.1', port)
+    server_address = (addr, port)
     
     MyRequestHandler.protocol_version = Protocol
     httpd = ServerClass(server_address, MyRequestHandler)
@@ -255,3 +258,14 @@ if __name__ == "__main__":
 # #     print('it is moved screenshot to pc success.....')
 # # else:
 # #     print('no device!')
+
+# import cv2
+# import numpy as np
+
+# constV = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2']
+# suits = ['0', '1', '2', '3']
+# for value in constV:
+#     for suit in suits:
+#         name = value+'_'+suit
+#         img = cv2.imread(name+".png")
+#         cv2.imwrite("new/"+name+".png", cv2.Canny(img, 200, 300))
