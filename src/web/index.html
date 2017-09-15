@@ -11,13 +11,12 @@
     <script src="/web/libs/lodash.js"></script>
     <style>
         .row-def {
-            margin-top: 20px
+            margin-bottom: 10px
         }
 
         .player-box {
             /* border: 2px solid #20a0ff; */
             position: relative;
-            margin-top: 20px;
             background-color: #ededed;
         }
 
@@ -26,11 +25,12 @@
         }
 
         .board-box {
-            border: 1px solid #a9a7a7;
             display: inline-block;
             position: relative;
-            width: 30px;
             margin: 10px;
+        }
+        .board-box-up{
+            bottom: 15px;
         }
         .error{
             border: 1px solid #e02323;
@@ -49,6 +49,14 @@
         .board-box span {
             margin: 5px;
         }
+        .board-img{
+            width: 30px;
+        }
+        .filter-btn{
+            width: 50px;
+            margin-left: 40px!important;
+            margin-top: 10px;
+        }
     </style>
 </head>
 
@@ -57,13 +65,15 @@
 
         <el-row class="row-def">
             <el-input style="width: 180px;" v-model="input" placeholder="请输入安全码"></el-input>
+            <el-radio class="radio" v-model="radio" label="4">4</el-radio>
+            <el-radio class="radio" v-model="radio" label="5">5</el-radio>
             <el-button type="primary" @click="rt" element-loading-text="解析中" v-loading.fullscreen.lock="fullscreenLoading">
                 开始
             </el-button>
         </el-row>
-        <el-row class="row-def">
-            <el-checkbox v-model="checked">显示屏幕图</el-checkbox>
-        </el-row>
+        <!-- <el-row class="row-def">
+            <el-checkbox v-model="showPick">显示屏幕图</el-checkbox>
+        </el-row> -->
         <el-row class="row-def">
             <el-tabs v-model="activeName" type="card" @tab-click="handleClick">
                 <el-tab-pane label="牌面" name="first"></el-tab-pane>
@@ -71,22 +81,30 @@
             </el-tabs>
         </el-row>
         <el-row class="row-def">
-            <div v-for="player in players" class="player-box">
-                <img class="ogimg" v-show="checked" v-bind:src="'/file/og/'+player.id+'.png'" /> 
-                <div class="title" v-bind:class="{ 'title-r': checked}">{{player.id}}</div>
-                <!-- <div v-for="(board,index) in player.boards" class="board-box" v-bind:class="{ 'error': board.value != vd[player.id][index] }"> -->
-                <div v-for="(board,index) in player.boards" class="board-box">
-                    <span>{{board.value}}</span>
-                     <img v-bind:src="'/boards/'+board.suit" /> 
+            <div class="player-box" v-if="playerRemain.length>0">
+                <div class="title">
+                    <span>剩下</span>
+                    <!-- <el-button type="primary" size="mini" class="filter-btn">dz</el-button>
+                    <el-button type="primary" size="mini" class="filter-btn" :disabled="true">ld</el-button>
+                    <el-button type="primary" size="mini" class="filter-btn">st</el-button>
+                    <el-button type="primary" size="mini" class="filter-btn">sz</el-button>
+                    <el-button type="primary" size="mini" class="filter-btn">th</el-button>
+                    <el-button type="primary" size="mini" class="filter-btn">hl</el-button>
+                    <el-button type="primary" size="mini" class="filter-btn">zd</el-button>
+                    <el-button type="primary" size="mini" class="filter-btn">ths</el-button> -->
+                </div>
+                
+                <div v-for="board in playerRemain" class="board-box">
+                    <img class="board-img" v-bind:src="resourcePath+board.value+'_'+board.suit+'.png'" /> 
                 </div>
             </div>
         </el-row>
         <el-row class="row-def">
-            <div class="player-box" v-if="playerRemain.length>0">
-                <div class="title">剩下</div>
-                <div v-for="board in playerRemain" class="board-box">
-                    <span>{{board.value}}</span>
-                     <img v-bind:src="'/boards/'+board.suit" /> 
+            <div v-for="player in players" class="player-box">
+                <!-- <img class="ogimg" v-show="checked" v-bind:src="'/file/og/'+player.id+'.png'" />  -->
+                <div class="title" v-bind:class="{ 'title-r': checked}">{{player.id}}</div>
+                <div v-for="(board,index) in player.boards" class="board-box">
+                     <img class="board-img" v-bind:src="resourcePath+board.value+'_'+board.suit+'.png'" /> 
                 </div>
             </div>
         </el-row>
@@ -94,23 +112,54 @@
 
     <script>
         var constv = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2'];
+        var defFilter = [{
+                        key:'dz',
+                        index:-1,
+                        attr:[]
+                    },{
+                        key:'ld',
+                        index:-1,
+                        attr:[]
+                    },{
+                        key:'st',
+                        index:-1,
+                        attr:[]
+                    },{
+                        key:'sz',
+                        index:-1,
+                        attr:[]
+                    },{
+                        key:'th',
+                        index:-1,
+                        attr:[]
+                    },{
+                        key:'hl',
+                        index:-1,
+                        attr:[]
+                    },{
+                        key:'zd',
+                        index:-1,
+                        attr:[]
+                    },{
+                        key:'ths',
+                        index:-1,
+                        attr:[]
+                    }];
         var app = new Vue({
             el: '#app',
             data: {
+                resourcePath:'/web/images/boards/',
+                radio: '5',
                 playerRemain: [],
                 players: [],
                 activeName: 'first',
                 input: '',
                 fullscreenLoading: false,
-                checked: true,
-                vd : {
-                    'T2_2'   :['Q','Q', 'J', '9', '9', '8', '7', '7', '5', '4', '3', '3', '2' ],
-                    'C2_0'   :['A', 'A', 'K', 'Q', 'J', 'J', '10', '10', '9', '6', '6', '5', '4'], 
-                    'R2_1'   :['A', 'A', 'K', 'Q', '10', '8', '8', '7', '6', '5', '3', '2', '2']
-        // s   K K J 10 9 8 7 6 5 4 4 3 2
-                }
+                checked: false,
+                filterInfo:[]
             },
             methods: {
+
                 sortByValue(boards) {
                     boards.sort(function (a, b) {
                         if (constv.indexOf(a.value) > constv.indexOf(b.value)) {
@@ -153,9 +202,12 @@
                 
                 getPlayerRemain(players) {
                     let remainPlayerBoards = [];
-
                     let values = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2'],
                         suits = [0, 1, 2, 3];
+                    if(this.radio === '5'){
+                        suits = [0, 1, 2, 3, 1];
+                    }
+                    
                     let boardsPooling = [];
                     values.forEach(value => {
                         suits.forEach(suit => {
@@ -172,45 +224,80 @@
                             });
                             if (index != -1) {
                                 boardsPooling.splice(index, 1);
-                            } else {
-                                // console.log(`未找到值：${board.value},花色：${board.suit}`)
                             }
                         })
                     });
-
-                    // console.log('剩下：')
-                    // boardsPooling.forEach(bo => {
-                    //     console.log(`值：${bo.value},花色：${bo.suit}`);
-                    // })
                     return boardsPooling;
                 },
+                getPlayers:function(datas){
+                    let players = [];
+                    _.forEach(datas,player=>{
+                        for(key in player){
+                            let boardsInfo = player[key];
+                            let boards = [];
+                            _.forEach(boardsInfo,board=>{
+                                let value = board.split('_')[0],
+                                    suit = board.split('_')[1];
+                                boards.push({
+                                    value:value,
+                                    suit:suit
+                                })
+                            })
+                            players.push({
+                                id:key,
+                                boards:boards
+                            })
+                        }
+                    });
+                    
+                    this.players = players;
+                },
+                getValue:{
+
+                },
+                initFilter:function(){
+                    this.filterInfo= JSON.parse(JSON.stringify(defFilter));
+                    _.forEach(this.playerRemain,board=>{
+                        let value = board.value;
+                        
+                    })
+                },
                 rt: function () {
+                    // this.getPlayers([{
+                    //     1:[
+                    //         'A_1','A_2','A_3',
+                    //         'K_1','K_2','K_3',
+                    //         'Q_1','Q_2','Q_3',
+                    //         'J_1','J_2','J_3','2_1'
+                    //     ],
+                    //     2:[
+                    //         '10_1','10_2','10_3',
+                    //         '9_1','9_2','9_3',
+                    //         '8_1','8_2','8_3',
+                    //         '7_1','7_2','7_3','2_2'
+                    //     ],
+                    //     3:[
+                    //         '6_1','6_2','6_3',
+                    //         '5_1','5_2','5_3',
+                    //         '4_1','4_2','4_3',
+                    //         '3_1','3_2','3_3','2_3'
+                    //     ],
+                    //     4:[
+                    //         'A_0','K_0','Q_0',
+                    //         'J_0','10_0','9_0',
+                    //         '8_0','7_0','6_0',
+                    //         '5_0','4_0','3_0','2_0'
+                    //     ],
+                    // }]);
+                    // this.playerRemain = this.getPlayerRemain(this.players);
+                    // this.initFilter();
+                    // return;
                     this.fullscreenLoading = true;
                     Vue.http.get('/action?pw=' + this.input).then((response) => {
                         if (response && response.bodyText) {
                             let datas = JSON.parse(response.bodyText.replace(/'/g,"\""))
-                            let players = [];
-                            _.forEach(datas,player=>{
-                                for(key in player){
-                                    let boardsInfo = player[key];
-                                    let boards = [];
-                                    _.forEach(boardsInfo,board=>{
-                                        let value = board.split('_')[0],
-                                            suit = board.split('_')[1];
-                                        boards.push({
-                                            value:value,
-                                            suit:suit
-                                        })
-                                    })
-                                    players.push({
-                                        id:key,
-                                        boards:boards
-                                    })
-                                }
-                            });
-                           
-                            this.players = players;
-                            // this.playerRemain = this.getPlayerRemain(this.players);
+                            this.getPlayers(datas);
+                            this.playerRemain = this.getPlayerRemain(this.players);
                             this.fullscreenLoading = false;
                         } else {
                             this.$message({
